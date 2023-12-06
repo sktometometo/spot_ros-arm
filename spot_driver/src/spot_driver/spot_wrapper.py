@@ -786,6 +786,7 @@ class SpotWrapper():
             raise ValueError('frame_name must be \'vision\' or \'odom\'')
 
         if response[0]:
+            rospy.loginfo(f"response: {response}")
             self._last_trajectory_command = response[2]
             command_id = self._last_trajectory_command
             while True:
