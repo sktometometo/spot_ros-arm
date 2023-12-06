@@ -433,6 +433,16 @@ class SpotROS():
         except Exception as e:
             return SetVelocityResponse(False, 'Error:{}'.format(e))
 
+    def handle_trajectory_preemption(self):
+        rate = rospy.Rate(10)
+        while not rospy.is_shutdown() and self.run_trajectory:
+            rate.sleep()
+            if self.trajectory_server.is_preempt_requested():
+                rospy.logwarn("Canceling trajectory action")
+                self.run_trajectory = False
+                self.spot_wrapper.cancel_trajectory_cmd()
+                break
+
     def handle_trajectory(self, req):
         """ROS actionserver execution handler to handle receiving a request to move to a location"""
         if req.target_pose.header.frame_id != 'body':
@@ -441,6 +451,11 @@ class SpotROS():
         if req.duration.data.to_sec() <= 0:
             self.trajectory_server.set_aborted(TrajectoryResult(False, 'duration must be larger than 0'))
             return
+
+        #
+        self.run_trajectory = True
+        preemption_thread = threading.Thread(target = self.handle_trajectory_preemption, args = ())
+        preemption_thread.start()
 
         cmd_duration = rospy.Duration(req.duration.data.secs, req.duration.data.nsecs)
         rospy.logwarn(f"req.duration: {req.duration}")
@@ -457,6 +472,10 @@ class SpotROS():
                         cmd_duration=cmd_duration.to_sec(),
                         precise_position=req.precise_positioning,
                         )
+
+        self.run_trajectory = False
+        preemption_thread.join()
+
         if resp[0]:
             self.trajectory_server.set_succeeded(TrajectoryResult(resp[0], resp[1]))
         else:
