@@ -174,7 +174,7 @@ class AsyncLidarPointCloudService(AsyncPeriodicQuery):
             callback: Callback function to call when the results of the query are available
     """
     def __init__(self, client, logger, rate, callback, point_cloud_requests):
-        super(AsyncPointCloudService, self).__init__("robot_point_cloud_service", client, logger,
+        super(AsyncLidarPointCloudService, self).__init__("robot_point_cloud_service", client, logger,
                                              period_sec=1.0/max(rate, 1.0))
         self._callback = None
         if rate > 0.0:
@@ -331,7 +331,7 @@ class SpotWrapper():
             self._rear_image_requests.append(build_image_request(source, image_format=image_pb2.Image.FORMAT_RAW))
 
         self._point_cloud_requests = []
-        for source in point_cloud_sources:
+        for source in lidar_point_cloud_sources:
             self._point_cloud_requests.append(build_pc_request(source))
 
         try:

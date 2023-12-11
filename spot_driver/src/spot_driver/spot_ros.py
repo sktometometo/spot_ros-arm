@@ -277,7 +277,7 @@ class SpotROS():
         """
         data = self.spot_wrapper.point_clouds
         if data:
-            point_cloud_msg = GetPointCloudMsg(data[0], self.spot_wrapper)
+            point_cloud_msg = GetLidarPointCloudMsg(data[0], self.spot_wrapper)
             self.lidar_point_cloud_pub.publish(point_cloud_msg)
             self.populate_lidar_static_transforms(data[0])
 
