@@ -16,6 +16,7 @@ from bosdyn.client.frame_helpers import get_odom_tform_body
 from bosdyn.client.power import safe_power_off, PowerClient, power_on
 from bosdyn.client.lease import LeaseClient, LeaseKeepAlive
 from bosdyn.client.image import ImageClient, build_image_request
+from bosdyn.client.point_cloud import PointCloudClient, build_pc_request
 from bosdyn.client.docking import DockingClient, blocking_dock_robot, blocking_undock
 from bosdyn.api import image_pb2
 from bosdyn.api.graph_nav import graph_nav_pb2
@@ -70,6 +71,9 @@ side_image_sources = ['left_fisheye_image', 'right_fisheye_image', 'left_depth',
 rear_image_sources = ['back_fisheye_image', 'back_depth']
 """List of image sources for gripper image periodic query"""
 gripper_image_sources = ['hand_color_image', 'hand_depth', 'hand_image', 'hand_depth_in_hand_color_frame', 'hand_color_in_hand_depth_frame']
+"""Service name for lidar"""
+VELODYNE_SERVICE_NAME='velodyne-point-cloud'
+lidar_point_cloud_sources = ['velodyne-point-cloud']
 
 
 class AsyncRobotState(AsyncPeriodicQuery):
@@ -158,6 +162,28 @@ class AsyncImageService(AsyncPeriodicQuery):
     def _start_query(self):
         if self._callback:
             callback_future = self._client.get_image_async(self._image_requests)
+            callback_future.add_done_callback(self._callback)
+            return callback_future
+
+class AsyncLidarPointCloudService(AsyncPeriodicQuery):
+    """Class to get point cloud at regular intervals.  get_point_cloud_from_sources_async query sent to the robot at every tick.  Callback registered to defined callback function.
+        Attributes:
+            client: The Client to a service on the robot
+            logger: Logger object
+            rate: Rate (Hz) to trigger the query
+            callback: Callback function to call when the results of the query are available
+    """
+    def __init__(self, client, logger, rate, callback, point_cloud_requests):
+        super(AsyncLidarPointCloudService, self).__init__("robot_point_cloud_service", client, logger,
+                                             period_sec=1.0/max(rate, 1.0))
+        self._callback = None
+        if rate > 0.0:
+            self._callback = callback
+        self._point_cloud_requests = point_cloud_requests
+
+    def _start_query(self):
+        if self._callback and self._point_cloud_requests:
+            callback_future = self._client.get_point_cloud_async(self._point_cloud_requests)
             callback_future.add_done_callback(self._callback)
             return callback_future
 
@@ -304,6 +330,10 @@ class SpotWrapper():
         for source in rear_image_sources:
             self._rear_image_requests.append(build_image_request(source, image_format=image_pb2.Image.FORMAT_RAW))
 
+        self._point_cloud_requests = []
+        for source in lidar_point_cloud_sources:
+            self._point_cloud_requests.append(build_pc_request(source))
+
         try:
             self._sdk = create_standard_sdk('ros_spot')
         except Exception as e:
@@ -349,6 +379,12 @@ class SpotWrapper():
                 self._valid = False
                 return
 
+            try:
+                self._point_cloud_client = self._robot.ensure_client(VELODYNE_SERVICE_NAME)
+            except Exception as e:
+                self._point_cloud_client = None
+                rospy.logwarn("No point cloud services are available.")
+
             # Store the most recent knowledge of the state of the robot based on rpc calls.
             self._current_graph = None
             self._current_edges = dict()  #maps to_waypoint to list(from_waypoint)
@@ -379,13 +415,17 @@ class SpotWrapper():
                     self._logger, max(0.0, self._rates.get("rear_image", 0.0)),
                     self._callbacks.get("rear_image", lambda:None),
                     self._rear_image_requests)
+            self._point_cloud_task = AsyncLidarPointCloudService(self._point_cloud_client,
+                    self._logger, max(0.0, self._rates.get("point_cloud", 0.0)),
+                    self._callbacks.get("lidar_points", lambda: None),
+                    self._point_cloud_requests)
             self._idle_task = AsyncIdle(self._robot_command_client,
                     self._logger, 10.0, self)
 
             async_task_list = [self._robot_state_task,
                     self._robot_metrics_task, self._lease_task,
                     self._front_image_task, self._side_image_task,
-                    self._rear_image_task, self._idle_task]
+                    self._rear_image_task, self._point_cloud_task, self._idle_task]
 
             if self._robot.has_arm:
                 rospy.loginfo("Robot has arm so adding gripper async camera task")
@@ -456,6 +496,11 @@ class SpotWrapper():
     def gripper_images(self):
         """Return latest proto from the _gripper_image_task"""
         return self._gripper_image_task.proto
+
+    @property
+    def point_clouds(self):
+        """Return latest proto from the _point_cloud_task"""
+        return self._point_cloud_task.proto
 
     @property
     def is_standing(self):

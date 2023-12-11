@@ -5,6 +5,7 @@ import math
 from std_srvs.srv import Trigger, TriggerResponse, SetBool, SetBoolResponse
 from tf2_msgs.msg import TFMessage
 from sensor_msgs.msg import Image, CameraInfo
+from sensor_msgs.msg import PointCloud2
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import TwistWithCovarianceStamped, Twist, Pose
 from nav_msgs.msg import Odometry
@@ -62,6 +63,7 @@ class SpotROS():
         self.callbacks["side_image"] = self.SideImageCB
         self.callbacks["rear_image"] = self.RearImageCB
         self.callbacks["gripper_image"] = self.GripperImageCB
+        self.callbacks["lidar_points"] = self.LidarPointCloudCB
 
     def RobotStateCB(self, results):
         """Callback for when the Spot Wrapper gets new robot state data.
@@ -267,6 +269,17 @@ class SpotROS():
                 t_image_pub.publish(image_msg0)
                 t_info_pub.publish(camera_info_msg0)
                 self.populate_camera_static_transforms(t_data)
+
+    def LidarPointCloudCB(self, results):
+        """Callback for when the Spot Wrapper gets new point cloud data.
+        Args:
+            results: FutureWrapper object of AsyncPeriodicQuery callback
+        """
+        data = self.spot_wrapper.point_clouds
+        if data:
+            point_cloud_msg = GetLidarPointCloudMsg(data[0], self.spot_wrapper)
+            self.lidar_point_cloud_pub.publish(point_cloud_msg)
+            self.populate_lidar_static_transforms(data[0])
 
     def handle_claim(self, req):
         """ROS service handler for the claim service"""
@@ -632,7 +645,7 @@ class SpotROS():
             if frame_name in excluded_frames:
                 continue
             parent_frame = image_data.shot.transforms_snapshot.child_to_parent_edge_map.get(frame_name).parent_frame_name
-            existing_transforms = [(transform.header.frame_id, transform.child_frame_id) for transform in self.camera_static_transforms]
+            existing_transforms = [(transform.header.frame_id, transform.child_frame_id) for transform in self.sensors_static_transforms]
             if (parent_frame, frame_name) in existing_transforms:
                 # We already extracted this transform
                 continue
@@ -642,8 +655,37 @@ class SpotROS():
             tf_time = rospy.Time(local_time.seconds, local_time.nanos)
             static_tf = populateTransformStamped(tf_time, transform.parent_frame_name, frame_name,
                                                  transform.parent_tform_child)
-            self.camera_static_transforms.append(static_tf)
-            self.camera_static_transform_broadcaster.sendTransform(self.camera_static_transforms)
+            self.sensors_static_transforms.append(static_tf)
+            self.sensors_static_transform_broadcaster.sendTransform(self.sensors_static_transforms)
+
+    def populate_lidar_static_transforms(self, point_cloud_data):
+        """Check data received from one of the point cloud tasks and use the transform snapshot to extract the lidar frame
+        transforms. This is the transforms from body->sensor, for example. These transforms
+        never change, but they may be calibrated slightly differently for each robot so we need to generate the
+        transforms at runtime.
+        Args:
+        point_cloud_data: PointCloud protobuf data from the wrapper
+        """
+        # We exclude the odometry frames from static transforms since they are not static. We can ignore the body
+        # frame because it is a child of odom or vision depending on the mode_parent_odom_tf, and will be published
+        # by the non-static transform publishing that is done by the state callback
+        excluded_frames = [self.tf_name_vision_odom, self.tf_name_kinematic_odom, "body"]
+        for frame_name in point_cloud_data.point_cloud.source.transforms_snapshot.child_to_parent_edge_map:
+            if frame_name in excluded_frames:
+                continue
+            parent_frame = point_cloud_data.point_cloud.source.transforms_snapshot.child_to_parent_edge_map.get(frame_name).parent_frame_name
+            existing_transforms = [(transform.header.frame_id, transform.child_frame_id) for transform in self.sensors_static_transforms]
+            if (parent_frame, frame_name) in existing_transforms:
+                # We already extracted this transform
+                continue
+
+            transform = point_cloud_data.point_cloud.source.transforms_snapshot.child_to_parent_edge_map.get(frame_name)
+            local_time = self.spot_wrapper.robotToLocalTime(point_cloud_data.point_cloud.source.acquisition_time)
+            tf_time = rospy.Time(local_time.seconds, local_time.nanos)
+            static_tf = populateTransformStamped(tf_time, transform.parent_frame_name, frame_name,
+                                                 transform.parent_tform_child)
+            self.sensors_static_transforms.append(static_tf)
+            self.sensors_static_transform_broadcaster.sendTransform(self.sensors_static_transforms)
 
     def shutdown(self):
         rospy.loginfo("Shutting down ROS driver for Spot")
@@ -665,12 +707,12 @@ class SpotROS():
         self.motion_deadzone = rospy.get_param('~deadzone', 0.05)
         self.estop_timeout = rospy.get_param('~estop_timeout', 9.0)
 
-        self.camera_static_transform_broadcaster = tf2_ros.StaticTransformBroadcaster()
+        self.sensors_static_transform_broadcaster = tf2_ros.StaticTransformBroadcaster()
         # Static transform broadcaster is super simple and just a latched publisher. Every time we add a new static
         # transform we must republish all static transforms from this source, otherwise the tree will be incomplete.
         # We keep a list of all the static transforms we already have so they can be republished, and so we can check
         # which ones we already have
-        self.camera_static_transforms = []
+        self.sensors_static_transforms = []
 
         # Spot has 2 types of odometries: 'odom' and 'vision'
         # The former one is kinematic odometry and the second one is a combined odometry of vision and kinematics
@@ -730,6 +772,9 @@ class SpotROS():
                 for t in ['hand_color', 'hand_depth', 'hand_image', 'hand_depth_in_hand_color_frame', 'hand_color_in_hand_depth_frame']:
                     self.gripper_image_pubs.append(rospy.Publisher('camera/'+t+'/image', Image, queue_size=10))
                     self.gripper_camera_info_pubs.append(rospy.Publisher('camera/'+t+'/camera_info', CameraInfo, queue_size=10))
+
+            # Lidar Point Cloud #
+            self.lidar_point_cloud_pub = rospy.Publisher('lidar/points', PointCloud2, queue_size=10)
 
             # Status Publishers #
             self.joint_state_pub = rospy.Publisher('joint_states', JointState, queue_size=10)
