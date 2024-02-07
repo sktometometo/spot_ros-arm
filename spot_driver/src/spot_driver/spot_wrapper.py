@@ -64,11 +64,11 @@ Image sources:
 """
 
 """List of image sources for front image periodic query"""
-front_image_sources = ['frontleft_fisheye_image', 'frontright_fisheye_image', 'frontleft_depth', 'frontright_depth']
+front_image_sources = ['frontleft_fisheye_image', 'frontright_fisheye_image', 'frontleft_depth', 'frontright_depth', 'frontleft_depth_in_visual_frame', 'frontright_depth_in_visual_frame']
 """List of image sources for side image periodic query"""
-side_image_sources = ['left_fisheye_image', 'right_fisheye_image', 'left_depth', 'right_depth']
+side_image_sources = ['left_fisheye_image', 'right_fisheye_image', 'left_depth', 'right_depth', 'left_depth_in_visual_frame', 'right_depth_in_visual_frame']
 """List of image sources for rear image periodic query"""
-rear_image_sources = ['back_fisheye_image', 'back_depth']
+rear_image_sources = ['back_fisheye_image', 'back_depth', 'back_depth_in_visual_frame']
 """List of image sources for gripper image periodic query"""
 gripper_image_sources = ['hand_color_image', 'hand_depth', 'hand_image', 'hand_depth_in_hand_color_frame', 'hand_color_in_hand_depth_frame']
 """Service name for lidar"""
