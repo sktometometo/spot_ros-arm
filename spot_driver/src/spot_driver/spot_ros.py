@@ -189,24 +189,30 @@ class SpotROS():
         del results
         data = self.spot_wrapper.front_images
         if data:
-            image_msg0, camera_info_msg0 = getImageMsg(data[0], self.spot_wrapper)
-            self.frontleft_image_pub.publish(image_msg0)
-            self.frontleft_image_info_pub.publish(camera_info_msg0)
-            image_msg1, camera_info_msg1 = getImageMsg(data[1], self.spot_wrapper)
-            self.frontright_image_pub.publish(image_msg1)
-            self.frontright_image_info_pub.publish(camera_info_msg1)
-            image_msg2, camera_info_msg2 = getImageMsg(data[2], self.spot_wrapper)
-            self.frontleft_depth_pub.publish(image_msg2)
-            self.frontleft_depth_info_pub.publish(camera_info_msg2)
-            image_msg3, camera_info_msg3 = getImageMsg(data[3], self.spot_wrapper)
-            self.frontright_depth_pub.publish(image_msg3)
-            self.frontright_depth_info_pub.publish(camera_info_msg3)
-            image_msg4, camera_info_msg4 = getImageMsg(data[4], self.spot_wrapper)
-            self.frontleft_depth_registered_pub.publish(image_msg4)
-            self.frontleft_depth_registered_info_pub.publish(camera_info_msg4)
-            image_msg5, camera_info_msg5 = getImageMsg(data[5], self.spot_wrapper)
-            self.frontright_depth_registered_pub.publish(image_msg5)
-            self.frontright_depth_registered_info_pub.publish(camera_info_msg5)
+            if self.frontleft_image_pub.get_num_connections() > 0 or self.frontleft_image_info_pub.get_num_connections() > 0:
+                image_msg0, camera_info_msg0 = getImageMsg(data[0], self.spot_wrapper)
+                self.frontleft_image_pub.publish(image_msg0)
+                self.frontleft_image_info_pub.publish(camera_info_msg0)
+            if self.frontright_image_pub.get_num_connections() > 0 or self.frontright_image_info_pub.get_num_connections() > 0:
+                image_msg1, camera_info_msg1 = getImageMsg(data[1], self.spot_wrapper)
+                self.frontright_image_pub.publish(image_msg1)
+                self.frontright_image_info_pub.publish(camera_info_msg1)
+            if self.frontleft_depth_pub.get_num_connections() > 0 or self.frontleft_depth_info_pub.get_num_connections() > 0:
+                image_msg2, camera_info_msg2 = getImageMsg(data[2], self.spot_wrapper)
+                self.frontleft_depth_pub.publish(image_msg2)
+                self.frontleft_depth_info_pub.publish(camera_info_msg2)
+            if self.frontright_depth_pub.get_num_connections() > 0 or self.frontright_depth_info_pub.get_num_connections() > 0:
+                image_msg3, camera_info_msg3 = getImageMsg(data[3], self.spot_wrapper)
+                self.frontright_depth_pub.publish(image_msg3)
+                self.frontright_depth_info_pub.publish(camera_info_msg3)
+            if self.frontleft_depth_registered_pub.get_num_connections() > 0 or self.frontleft_depth_registered_info_pub.get_num_connections() > 0:
+                image_msg4, camera_info_msg4 = getImageMsg(data[4], self.spot_wrapper)
+                self.frontleft_depth_registered_pub.publish(image_msg4)
+                self.frontleft_depth_registered_info_pub.publish(camera_info_msg4)
+            if self.frontright_depth_registered_pub.get_num_connections() > 0 or self.frontright_depth_registered_info_pub.get_num_connections() > 0:
+                image_msg5, camera_info_msg5 = getImageMsg(data[5], self.spot_wrapper)
+                self.frontright_depth_registered_pub.publish(image_msg5)
+                self.frontright_depth_registered_info_pub.publish(camera_info_msg5)
 
             self.populate_camera_static_transforms(data[0])
             self.populate_camera_static_transforms(data[1])
@@ -224,24 +230,30 @@ class SpotROS():
         del results
         data = self.spot_wrapper.side_images
         if data:
-            image_msg0, camera_info_msg0 = getImageMsg(data[0], self.spot_wrapper)
-            self.left_image_pub.publish(image_msg0)
-            self.left_image_info_pub.publish(camera_info_msg0)
-            image_msg1, camera_info_msg1 = getImageMsg(data[1], self.spot_wrapper)
-            self.right_image_pub.publish(image_msg1)
-            self.right_image_info_pub.publish(camera_info_msg1)
-            image_msg2, camera_info_msg2 = getImageMsg(data[2], self.spot_wrapper)
-            self.left_depth_pub.publish(image_msg2)
-            self.left_depth_info_pub.publish(camera_info_msg2)
-            image_msg3, camera_info_msg3 = getImageMsg(data[3], self.spot_wrapper)
-            self.right_depth_pub.publish(image_msg3)
-            self.right_depth_info_pub.publish(camera_info_msg3)
-            image_msg4, camera_info_msg4 = getImageMsg(data[4], self.spot_wrapper)
-            self.left_depth_registered_pub.publish(image_msg4)
-            self.left_depth_registered_info_pub.publish(camera_info_msg4)
-            image_msg5, camera_info_msg5 = getImageMsg(data[5], self.spot_wrapper)
-            self.right_depth_registered_pub.publish(image_msg5)
-            self.right_depth_registered_info_pub.publish(camera_info_msg5)
+            if self.left_image_pub.get_num_connections() > 0 or self.left_image_info_pub.get_num_connections() > 0:
+                image_msg0, camera_info_msg0 = getImageMsg(data[0], self.spot_wrapper)
+                self.left_image_pub.publish(image_msg0)
+                self.left_image_info_pub.publish(camera_info_msg0)
+            if self.right_image_pub.get_num_connections() > 0 or self.right_image_info_pub.get_num_connections() > 0:
+                image_msg1, camera_info_msg1 = getImageMsg(data[1], self.spot_wrapper)
+                self.right_image_pub.publish(image_msg1)
+                self.right_image_info_pub.publish(camera_info_msg1)
+            if self.left_depth_pub.get_num_connections() > 0 or self.left_depth_info_pub.get_num_connections() > 0:
+                image_msg2, camera_info_msg2 = getImageMsg(data[2], self.spot_wrapper)
+                self.left_depth_pub.publish(image_msg2)
+                self.left_depth_info_pub.publish(camera_info_msg2)
+            if self.right_depth_pub.get_num_connections() > 0 or self.right_depth_info_pub.get_num_connections() > 0:
+                image_msg3, camera_info_msg3 = getImageMsg(data[3], self.spot_wrapper)
+                self.right_depth_pub.publish(image_msg3)
+                self.right_depth_info_pub.publish(camera_info_msg3)
+            if self.left_depth_registered_pub.get_num_connections() > 0 or self.left_depth_registered_info_pub.get_num_connections() > 0:
+                image_msg4, camera_info_msg4 = getImageMsg(data[4], self.spot_wrapper)
+                self.left_depth_registered_pub.publish(image_msg4)
+                self.left_depth_registered_info_pub.publish(camera_info_msg4)
+            if self.right_depth_registered_pub.get_num_connections() > 0 or self.right_depth_registered_info_pub.get_num_connections() > 0:
+                image_msg5, camera_info_msg5 = getImageMsg(data[5], self.spot_wrapper)
+                self.right_depth_registered_pub.publish(image_msg5)
+                self.right_depth_registered_info_pub.publish(camera_info_msg5)
 
             self.populate_camera_static_transforms(data[0])
             self.populate_camera_static_transforms(data[1])
@@ -259,15 +271,18 @@ class SpotROS():
         del results
         data = self.spot_wrapper.rear_images
         if data:
-            image_msg0, camera_info_msg0 = getImageMsg(data[0], self.spot_wrapper)
-            self.back_image_pub.publish(image_msg0)
-            self.back_image_info_pub.publish(camera_info_msg0)
-            mage_msg1, camera_info_msg1 = getImageMsg(data[1], self.spot_wrapper)
-            self.back_depth_pub.publish(mage_msg1)
-            self.back_depth_info_pub.publish(camera_info_msg1)
-            mage_msg2, camera_info_msg2 = getImageMsg(data[2], self.spot_wrapper)
-            self.back_depth_registered_pub.publish(mage_msg2)
-            self.back_depth_registered_info_pub.publish(camera_info_msg2)
+            if self.back_image_pub.get_num_connections() > 0 or self.back_image_info_pub.get_num_connections() > 0:
+                image_msg0, camera_info_msg0 = getImageMsg(data[0], self.spot_wrapper)
+                self.back_image_pub.publish(image_msg0)
+                self.back_image_info_pub.publish(camera_info_msg0)
+            if self.back_depth_pub.get_num_connections() > 0 or self.back_depth_info_pub.get_num_connections() > 0:
+                mage_msg1, camera_info_msg1 = getImageMsg(data[1], self.spot_wrapper)
+                self.back_depth_pub.publish(mage_msg1)
+                self.back_depth_info_pub.publish(camera_info_msg1)
+            if self.back_depth_registered_pub.get_num_connections() > 0 or self.back_depth_registered_info_pub.get_num_connections() > 0:
+                mage_msg2, camera_info_msg2 = getImageMsg(data[2], self.spot_wrapper)
+                self.back_depth_registered_pub.publish(mage_msg2)
+                self.back_depth_registered_info_pub.publish(camera_info_msg2)
 
             self.populate_camera_static_transforms(data[0])
             self.populate_camera_static_transforms(data[1])
@@ -285,9 +300,10 @@ class SpotROS():
             rospy.loginfo_throttle(1, "We have an arm but no gripper image data received... if this happens at the start it's OK, otherwise it's a problem")
         if data:
             for t_data, t_image_pub, t_info_pub in zip(data, self.gripper_image_pubs, self.gripper_camera_info_pubs):
-                image_msg0, camera_info_msg0 = getImageMsg(t_data, self.spot_wrapper)
-                t_image_pub.publish(image_msg0)
-                t_info_pub.publish(camera_info_msg0)
+                if t_image_pub.get_num_connections() > 0 or t_info_pub.get_num_connections() > 0:
+                    image_msg0, camera_info_msg0 = getImageMsg(t_data, self.spot_wrapper)
+                    t_image_pub.publish(image_msg0)
+                    t_info_pub.publish(camera_info_msg0)
                 self.populate_camera_static_transforms(t_data)
 
     def LidarPointCloudCB(self, results):
