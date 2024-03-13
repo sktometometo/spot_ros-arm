@@ -7,6 +7,7 @@ rates:
   rear_image: 10.0
   gripper_image: 10.0
   point_cloud: 10.0
+  world_object: 10.0
 auto_claim: False
 auto_power_on: False
 auto_stand: False
