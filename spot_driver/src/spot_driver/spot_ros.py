@@ -661,7 +661,7 @@ class SpotROS:
     def handle_list_graph(self, req):
         """ROS service handler for listing graph_nav waypoint_ids"""
         resp = self.spot_wrapper.list_graph()
-        return ListGraphResponse(resp)
+        return ListGraphResponse(waypoint_ids=resp)
 
     def handle_upload_graph(self, req):
         """"""

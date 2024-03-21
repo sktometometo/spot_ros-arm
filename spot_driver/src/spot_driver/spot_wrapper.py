@@ -899,7 +899,12 @@ class SpotWrapper():
         """
         ids, eds = self._list_graph_waypoint_and_edge_ids()
         # skip waypoint_ for v2.2.1, skip waypiont for < v2.2
-        return [v for k, v in sorted(ids.items(), key=lambda id : int(id[0].replace('waypoint_','')))]
+        def to_key(id):
+            try:
+                return int(id[0].replace('waypoint_',''))
+            except ValueError:
+                return 0
+        return [str(v) for k, v in sorted(ids.items(), key=to_key)]
 
     def battery_change_pose(self, dir_hint=1):
         """Robot sit down and roll on to it its side for easier battery access"""
@@ -1130,7 +1135,7 @@ class SpotWrapper():
             # Sleep for half a second to allow for command execution.
             time.sleep(0.5)
             try:
-                if ros_lock is None:
+                if roslock is None:
                     nav_to_cmd_id = self._graph_nav_client.navigate_to(destination_waypoint, 1.0,
                                                                        leases=[sublease.lease_proto],
                                                                        travel_params=travel_params,
