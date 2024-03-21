@@ -18,6 +18,7 @@ from geometry_msgs.msg import (
     Twist,
     TwistWithCovarianceStamped,
 )
+from ros_lock import ROSLock
 from jsk_recognition_msgs.msg import BoundingBox, BoundingBoxArray
 from nav_msgs.msg import Odometry
 from numpy import append
@@ -91,6 +92,8 @@ class SpotROS:
         self.callbacks["gripper_image"] = self.GripperImageCB
         self.callbacks["lidar_points"] = self.LidarPointCloudCB
         self.callbacks["world_object"] = self.WorldObjectCB
+
+        self.roslock_mobility = ROSLock("mobility")
 
     def RobotStateCB(self, results):
         """Callback for when the Spot Wrapper gets new robot state data.
@@ -731,6 +734,7 @@ class SpotROS:
                     else None
                 ),
             ),
+            roslock=self.roslock_mobility,
         )
         self.run_navigate_to = False
         feedback_thread.join()

@@ -2,6 +2,7 @@ import time
 import math
 import rospy
 import os
+from ros_lock import roslock_acquire
 
 from bosdyn.client import create_standard_sdk, ResponseError, RpcError
 from bosdyn.client.async_tasks import AsyncPeriodicQuery, AsyncTasks
@@ -952,7 +953,8 @@ class SpotWrapper():
 
     def navigate_to(self,
                     id_navigate_to,
-                    velocity_limit = (None, None, None)
+                    velocity_limit = (None, None, None),
+                    roslock = None
                     ):
         """ navigate with graph nav.
 
@@ -961,7 +963,7 @@ class SpotWrapper():
            velocity_limit : Limit to velocity, (linear_x, linear_y, angular_z)
         """
         self._get_localization_state()
-        resp = self._start_navigate_to(id_navigate_to, velocity_limit=velocity_limit)
+        resp = self._start_navigate_to(id_navigate_to, velocity_limit=velocity_limit, roslock=roslock)
         return resp
 
     ## copy from spot-sdk/python/examples/graph_nav_command_line/graph_nav_command_line.py
@@ -1084,7 +1086,7 @@ class SpotWrapper():
     def _cancel_navigate_to(self):
         self._navigate_to_valid = False
 
-    def _start_navigate_to(self, waypoint_id, velocity_limit = (None, None, None)):
+    def _start_navigate_to(self, waypoint_id, velocity_limit = (None, None, None), roslock = None):
         """Navigate to a specific waypoint."""
         # Take the first argument as the destination waypoint.
 
@@ -1128,11 +1130,19 @@ class SpotWrapper():
             # Sleep for half a second to allow for command execution.
             time.sleep(0.5)
             try:
-                nav_to_cmd_id = self._graph_nav_client.navigate_to(destination_waypoint, 1.0,
-                                                                   leases=[sublease.lease_proto],
-                                                                   travel_params=travel_params,
-                                                                   command_id=nav_to_cmd_id)
-                self._last_navigate_to_command = nav_to_cmd_id
+                if ros_lock is None:
+                    nav_to_cmd_id = self._graph_nav_client.navigate_to(destination_waypoint, 1.0,
+                                                                       leases=[sublease.lease_proto],
+                                                                       travel_params=travel_params,
+                                                                       command_id=nav_to_cmd_id)
+                    self._last_navigate_to_command = nav_to_cmd_id
+                else:
+                    with roslock_acquire(roslock):
+                        nav_to_cmd_id = self._graph_nav_client.navigate_to(destination_waypoint, 1.0,
+                                                                           leases=[sublease.lease_proto],
+                                                                           travel_params=travel_params,
+                                                                           command_id=nav_to_cmd_id)
+                        self._last_navigate_to_command = nav_to_cmd_id
             except ResponseError as e:
                 self._logger.error("Error while navigating {}".format(e))
                 break
