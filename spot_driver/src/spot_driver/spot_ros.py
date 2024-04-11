@@ -741,7 +741,9 @@ class SpotROS:
         preemption_thread.join()
 
         # check status
-        if resp[0]:
+        if resp is None:
+            self.navigate_as.set_aborted(NavigateToResult(False, "Error"))
+        elif resp[0]:
             self.navigate_as.set_succeeded(NavigateToResult(resp[0], resp[1]))
         elif not resp[0] and resp[2] == "preempted":
             self.navigate_as.set_preempted(NavigateToResult(resp[0], resp[1]))

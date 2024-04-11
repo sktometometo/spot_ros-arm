@@ -1103,7 +1103,7 @@ class SpotWrapper():
                                     self._logger)
         if not destination_waypoint:
             # Failed to find the appropriate unique waypoint id for the navigation command.
-            return
+            return False, "Not found unique waypoint"
         else:
             self._logger.info('navigate to {}'.format(destination_waypoint))
 
