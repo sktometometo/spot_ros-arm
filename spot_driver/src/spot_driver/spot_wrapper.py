@@ -233,6 +233,28 @@ class AsyncGraphNavGetLocalizationStateService(AsyncPeriodicQuery):
             callback_future.add_done_callback(self._callback)
             return callback_future
 
+class AsyncGraphNavGraphService(AsyncPeriodicQuery):
+    """Class to get localization state of graph nav at regular intervals.
+   Callback registered to defined callback function.
+        Attributes:
+            client: The Client to a service on the robot
+            logger: Logger object
+            rate: Rate (Hz) to trigger the query
+            callback: Callback function to call when the results of the query are available
+    """
+    def __init__(self, client, logger, rate, callback):
+        super(AsyncGraphNavGraphService, self).__init__("graph_nav_graph_service", client, logger,
+                                             period_sec=1.0/max(rate, 1.0))
+        self._callback = None
+        if rate > 0.0:
+            self._callback = callback
+
+    def _start_query(self):
+        if self._callback:
+            callback_future = self._client.download_graph_async()
+            callback_future.add_done_callback(self._callback)
+            return callback_future
+
 class AsyncIdle(AsyncPeriodicQuery):
     """Class to check if the robot is moving, and if not, command a stand with the set mobility parameters
 
@@ -474,12 +496,15 @@ class SpotWrapper():
             self._graph_nav_localization_task = AsyncGraphNavGetLocalizationStateService(self._graph_nav_client,
                     self._logger, max(0.0, self._rates.get("graph_nav_localization_state", 0.0)),
                     self._callbacks.get("graph_nav_localization_state", lambda: None))
+            self._graph_nav_graph_task = AsyncGraphNavGraphService(self._graph_nav_client,
+                    self._logger, max(0.0, self._rates.get("graph_nav_graph_state", 0.0)),
+                    self._callbacks.get("graph_nav_graph_state", lambda: None))
 
             async_task_list = [self._robot_state_task,
                     self._robot_metrics_task, self._lease_task,
                     self._front_image_task, self._side_image_task,
                     self._rear_image_task, self._point_cloud_task, self._idle_task, self._world_object_task,
-                    self._graph_nav_localization_task]
+                    self._graph_nav_localization_task, self._graph_nav_graph_task]
 
             if self._robot.has_arm:
                 rospy.loginfo("Robot has arm so adding gripper async camera task")
@@ -565,6 +590,10 @@ class SpotWrapper():
     @property
     def graph_nav_localization(self):
         return self._graph_nav_localization_task.proto
+
+    @property
+    def graph_nav_graph(self):
+        return self._graph_nav_graph_task.proto
 
     @property
     def is_standing(self):
