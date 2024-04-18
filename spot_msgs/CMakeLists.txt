@@ -34,6 +34,7 @@ add_message_files(
   PowerState.msg
   SystemFaultState.msg
   DockState.msg
+  GraphNavLocalization.msg
 )
 
 add_service_files(

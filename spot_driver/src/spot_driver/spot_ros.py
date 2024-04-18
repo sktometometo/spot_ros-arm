@@ -92,6 +92,7 @@ class SpotROS:
         self.callbacks["gripper_image"] = self.GripperImageCB
         self.callbacks["lidar_points"] = self.LidarPointCloudCB
         self.callbacks["world_object"] = self.WorldObjectCB
+        self.callbacks["graph_nav_localization_state"] = self.GraphNavLocalizationStateCB
 
         self.roslock_mobility = ROSLock("mobility")
 
@@ -369,6 +370,11 @@ class SpotROS:
         del results
         proto = self.spot_wrapper.world_object
         self.publish_world_object(proto)
+
+    def GraphNavLocalizationStateCB(self, results):
+        del results
+        proto = self.spot_wrapper.graph_nav_localization
+        rospy.logdebug(f"{proto.localization}")
 
     def handle_claim(self, req):
         """ROS service handler for the claim service"""

@@ -8,6 +8,7 @@ rates:
   gripper_image: 10.0
   point_cloud: 10.0
   world_object: 10.0
+  graph_nav_localization_state: 20.0
 auto_claim: False
 auto_power_on: False
 auto_stand: False

@@ -1,0 +1,4 @@
+std_msgs/Header header
+string waypoint_id
+geometry_msgs/Pose body_pose_in_waypoint
+geometry_msgs/Pose body_pose_in_reference_frame
