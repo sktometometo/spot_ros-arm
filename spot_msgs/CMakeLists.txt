@@ -42,6 +42,8 @@ add_message_files(
   GraphNavAnchoring.msg
   GraphNavAnchor.msg
   GraphNavAnchoredWorldObject.msg
+  GraphNavRoute.msg
+  GraphNavNavigationFeedback.msg
 )
 
 add_service_files(

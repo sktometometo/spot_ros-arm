@@ -54,6 +54,8 @@ from spot_msgs.msg import (
     GraphNavAnchoring,
     GraphNavAnchor,
     GraphNavAnchoredWorldObject,
+    GraphNavRoute,
+    GraphNavNavigationFeedback,
 )
 from spot_msgs.srv import (
     ClearBehaviorFault,
@@ -776,13 +778,18 @@ class SpotROS:
         """Thread function to send navigate_to feedback"""
         rate = rospy.Rate(10)
         while not rospy.is_shutdown() and self.run_navigate_to:
-            localization_state = (
-                self.spot_wrapper._graph_nav_client.get_localization_state()
-            )
+            localization_state = self.spot_wrapper._graph_nav_client.get_localization_state()
+            navigate_feedback_response = self._graph_nav_client.navigation_feedback()
+            feedback = NavigateToFeedback()
+            msg = GraphNavRoute(
+                    waypoint_id=[wi for wi in navigate_feedback_response.remaining_route.waypoint_id],
+                    edge_id=[GraphNavEdgeId(from_waypoint=ei.from_waypoint, to_waypoint=ei.to_waypoint) for ei in navigate_feedback_response.remaining_route.waypoint_id],
+                    )
+            feedback.remaining_route = msg
+            msg.waypoint_id = []
             if localization_state.localization.waypoint_id:
-                self.navigate_as.publish_feedback(
-                    NavigateToFeedback(localization_state.localization.waypoint_id)
-                )
+                feedback.waypoint_id = localization_state.localization.waypoint_id
+            self.navigate_as.publish_feedback(feedback)
             rate.sleep()
 
     def handle_navigate_to_preemption(self):

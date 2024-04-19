@@ -1,0 +1,34 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/sktometometo/ros/ws_jsk_spot/devel/include/**",
+        "/opt/ros/noetic/include/**",
+        "/home/sktometometo/ros/ws_jsk_spot/src/image_transport_plugins/compressed_depth_image_transport/include/**",
+        "/home/sktometometo/ros/ws_jsk_spot/src/image_transport_plugins/compressed_image_transport/include/**",
+        "/home/sktometometo/ros/ws_jsk_spot/src/jsk-ros-pkg/jsk_robot/jsk_robot_common/jsk_robot_startup/include/**",
+        "/home/sktometometo/ros/ws_jsk_spot/src/jsk-ros-pkg/jsk_common/jsk_topic_tools/include/**",
+        "/opt/ros/noetic/share/julius/include/**",
+        "/home/sktometometo/ros/ws_jsk_spot/src/jsk-ros-pkg/jsk_robot/jsk_pr2_robot/pr2_base_trajectory_action/include/**",
+        "/home/sktometometo/ros/ws_jsk_spot/src/jsk-ros-pkg/jsk_robot/jsk_robot_common/speak_and_wait_recovery/include/**",
+        "/home/sktometometo/ros/ws_jsk_spot/src/ublox/ublox_gps/include/**",
+        "/home/sktometometo/ros/ws_jsk_spot/src/ublox/ublox_msg_filters/include/**",
+        "/home/sktometometo/ros/ws_jsk_spot/src/ublox/ublox_msgs/include/**",
+        "/home/sktometometo/ros/ws_jsk_spot/src/ublox/ublox_serialization/include/**",
+        "/home/sktometometo/ros/ws_jsk_spot/src/jsk-ros-pkg/jsk_robot/jsk_robot_common/update_move_base_parameter_recovery/include/**",
+        "/home/sktometometo/ros/ws_jsk_spot/src/jsk-ros-pkg/jsk_3rdparty/zdepth_image_transport/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

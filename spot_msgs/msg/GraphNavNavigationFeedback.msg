@@ -1,0 +1,2 @@
+std_msgs/Header header
+spot_msgs/GraphNavRoute remaining_route
