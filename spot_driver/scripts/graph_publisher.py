@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 
-import copy
-import threading
-from re import sub
-
 import message_filters
 import PyKDL
 import rospy
@@ -50,7 +46,7 @@ class GraphPublisher:
             allow_headerless=True,
         )
         self.ts_graph_nav_localization.registerCallback(self._cb_odom)
-        
+
         self._sub_graph_nav_graph = rospy.Subscriber(
             "/spot/graph_nav_graph",
             GraphNavGraph,
