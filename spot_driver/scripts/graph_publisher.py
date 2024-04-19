@@ -114,6 +114,15 @@ class GraphPublisher:
                         ),
                     )
             self._frame_odom_to_graph_reference = self.frame_odom_to_body * frame_graph_reference_to_body.Inverse()
+        if self.frame_id_odom is None:
+            rospy.logerror("Odom is not initialied")
+            return
+        transform = TransformStamped()
+        transform.header.stamp = rospy.Time.now()
+        transform.header.frame_id = self.frame_id_odom
+        transform.child_frame_id = self.frame_id_graph_reference
+        transform.transform = convert_to_transform(self.frame_odom_to_graph_reference)
+        self.tf_broadcaster.sendTransform(transform)
 
     def _cb_graph_nav_graph(self, msg):
         frames_graph = {}
@@ -155,22 +164,9 @@ class GraphPublisher:
         with self._lock_frames_graph:
             self._frames_graph = frames_graph
 
-    def spin(self):
-        rate = rospy.Rate(100)
-        while not rospy.is_shutdown():
-            rate.sleep()
-            if self.frame_id_odom is None:
-                continue
-            transform = TransformStamped()
-            transform.header.stamp = rospy.Time.now()
-            transform.header.frame_id = self.frame_id_odom
-            transform.child_frame_id = self.frame_id_graph_reference
-            transform.transform = convert_to_transform(self.frame_odom_to_graph_reference)
-            self.tf_broadcaster.sendTransform(transform)
-
 
 if __name__ == "__main__":
     rospy.init_node('graph_publisher')
     node = GraphPublisher()
-    node.spin()
+    rospy.spin()
 
