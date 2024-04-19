@@ -1,0 +1,3 @@
+spot_msgs/GraphNavEdgeId id
+string snapshot_id
+geometry_msgs/Pose from_tform_to

@@ -497,8 +497,8 @@ class SpotWrapper():
                     self._logger, max(0.0, self._rates.get("graph_nav_localization_state", 0.0)),
                     self._callbacks.get("graph_nav_localization_state", lambda: None))
             self._graph_nav_graph_task = AsyncGraphNavGraphService(self._graph_nav_client,
-                    self._logger, max(0.0, self._rates.get("graph_nav_graph_state", 0.0)),
-                    self._callbacks.get("graph_nav_graph_state", lambda: None))
+                    self._logger, max(0.0, self._rates.get("graph_nav_graph", 0.0)),
+                    self._callbacks.get("graph_nav_graph", lambda: None))
 
             async_task_list = [self._robot_state_task,
                     self._robot_metrics_task, self._lease_task,

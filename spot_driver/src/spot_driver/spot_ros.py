@@ -46,6 +46,14 @@ from spot_msgs.msg import (
     TrajectoryFeedback,
     TrajectoryResult,
     WiFiState,
+    GraphNavLocalization,
+    GraphNavGraph,
+    GraphNavEdge,
+    GraphNavEdgeId,
+    GraphNavWaypoint,
+    GraphNavAnchoring,
+    GraphNavAnchor,
+    GraphNavAnchoredWorldObject,
 )
 from spot_msgs.srv import (
     ClearBehaviorFault,
@@ -375,12 +383,86 @@ class SpotROS:
     def GraphNavLocalizationStateCB(self, results):
         del results
         proto = self.spot_wrapper.graph_nav_localization
-        rospy.logdebug(f"{proto.localization}")
+        msg = GraphNavLocalization()
+        msg.header.stamp = rospy.Time(
+                proto.localization.timestamp.seconds,
+                proto.localization.timestamp.nanos,
+                )
+        msg.waypoint_id = proto.localization.waypoint_id
+        msg.body_pose_in_waypoint.position.x = proto.localization.waypoint_tform_body.position.x
+        msg.body_pose_in_waypoint.position.y = proto.localization.waypoint_tform_body.position.y
+        msg.body_pose_in_waypoint.position.z = proto.localization.waypoint_tform_body.position.z
+        msg.body_pose_in_waypoint.orientation.x = proto.localization.waypoint_tform_body.rotation.x
+        msg.body_pose_in_waypoint.orientation.y = proto.localization.waypoint_tform_body.rotation.y
+        msg.body_pose_in_waypoint.orientation.z = proto.localization.waypoint_tform_body.rotation.z
+        msg.body_pose_in_waypoint.orientation.w = proto.localization.waypoint_tform_body.rotation.w
+        msg.body_pose_in_reference_frame.position.x = proto.localization.seed_tform_body.position.x
+        msg.body_pose_in_reference_frame.position.y = proto.localization.seed_tform_body.position.y
+        msg.body_pose_in_reference_frame.position.z = proto.localization.seed_tform_body.position.z
+        msg.body_pose_in_reference_frame.orientation.x = proto.localization.seed_tform_body.rotation.x
+        msg.body_pose_in_reference_frame.orientation.y = proto.localization.seed_tform_body.rotation.y
+        msg.body_pose_in_reference_frame.orientation.z = proto.localization.seed_tform_body.rotation.z
+        msg.body_pose_in_reference_frame.orientation.w = proto.localization.seed_tform_body.rotation.w
+        self.graph_nav_localization_state_pub.publish(msg)
 
     def GraphNavGraphCB(self, results):
         del results
         proto = self.spot_wrapper.graph_nav_graph
-        rospy.logdebug(f"{proto.anchoring}")
+        msg_graph = GraphNavGraph()
+        # waypoints
+        for waypoint in proto.waypoints:
+            msg = GraphNavWaypoint()
+            msg.id = waypoint.id
+            msg.snapshot_id = waypoint.snapshot_id
+            msg.waypoint_tform_ko.position.x = waypoint.waypoint_tform_ko.position.x
+            msg.waypoint_tform_ko.position.y = waypoint.waypoint_tform_ko.position.y
+            msg.waypoint_tform_ko.position.z = waypoint.waypoint_tform_ko.position.z
+            msg.waypoint_tform_ko.orientation.x = waypoint.waypoint_tform_ko.rotation.x
+            msg.waypoint_tform_ko.orientation.y = waypoint.waypoint_tform_ko.rotation.y
+            msg.waypoint_tform_ko.orientation.z = waypoint.waypoint_tform_ko.rotation.z
+            msg.waypoint_tform_ko.orientation.w = waypoint.waypoint_tform_ko.rotation.w
+            msg_graph.waypoints.append(msg)
+        # edges
+        for edge in proto.edges:
+            msg = GraphNavEdge()
+            msg.id = GraphNavEdgeId(
+                    from_waypoint=edge.id.from_waypoint,
+                    to_waypoint=edge.id.to_waypoint,
+                    )
+            msg.snapshot_id = edge.snapshot_id
+            msg.from_tform_to.position.x = edge.from_tform_to.position.x
+            msg.from_tform_to.position.y = edge.from_tform_to.position.y
+            msg.from_tform_to.position.z = edge.from_tform_to.position.z
+            msg.from_tform_to.orientation.x = edge.from_tform_to.rotation.x
+            msg.from_tform_to.orientation.y = edge.from_tform_to.rotation.y
+            msg.from_tform_to.orientation.z = edge.from_tform_to.rotation.z
+            msg.from_tform_to.orientation.w = edge.from_tform_to.rotation.w
+            msg_graph.edges.append(msg)
+        # anchoring.anchors
+        for anchor in proto.anchoring.anchors:
+            msg = GraphNavAnchor()
+            msg.id = anchor.id
+            msg.seed_tform_waypoint.position.x = anchor.seed_tform_waypoint.position.x
+            msg.seed_tform_waypoint.position.y = anchor.seed_tform_waypoint.position.y
+            msg.seed_tform_waypoint.position.z = anchor.seed_tform_waypoint.position.z
+            msg.seed_tform_waypoint.orientation.x = anchor.seed_tform_waypoint.rotation.x
+            msg.seed_tform_waypoint.orientation.y = anchor.seed_tform_waypoint.rotation.y
+            msg.seed_tform_waypoint.orientation.z = anchor.seed_tform_waypoint.rotation.z
+            msg.seed_tform_waypoint.orientation.w = anchor.seed_tform_waypoint.rotation.w
+            msg_graph.anchoring.anchors.append(msg)
+        # anchoring.objects
+        for anchored_world_object in proto.anchoring.objects:
+            msg = GraphNavAnchoredWorldObject()
+            msg.id = anchored_world_object.id
+            msg.seed_tform_object.position.x = anchored_world_object.seed_tform_object.position.x
+            msg.seed_tform_object.position.y = anchored_world_object.seed_tform_object.position.y
+            msg.seed_tform_object.position.z = anchored_world_object.seed_tform_object.position.z
+            msg.seed_tform_object.orientation.x = anchored_world_object.seed_tform_object.rotation.x
+            msg.seed_tform_object.orientation.y = anchored_world_object.seed_tform_object.rotation.y
+            msg.seed_tform_object.orientation.z = anchored_world_object.seed_tform_object.rotation.z
+            msg.seed_tform_object.orientation.w = anchored_world_object.seed_tform_object.rotation.w
+            msg_graph.anchoring.objects.append(msg)
+        self.graph_nav_graph_pub.publish(msg_graph)
 
     def handle_claim(self, req):
         """ROS service handler for the claim service"""
@@ -1103,6 +1185,14 @@ class SpotROS:
             self.world_object_detection_bbox_pub = rospy.Publisher(
                 "tracked_world_objects_detection", BoundingBoxArray, queue_size=10
             )
+
+            # GraphNav "
+            self.graph_nav_localization_state_pub = rospy.Publisher(
+                "graph_nav_localization_state", GraphNavLocalization, queue_size=10
+                )
+            self.graph_nav_graph_pub = rospy.Publisher(
+                "graph_nav_graph", GraphNavGraph, queue_size=10
+                )
 
             # Status Publishers #
             self.joint_state_pub = rospy.Publisher(

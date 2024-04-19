@@ -35,6 +35,13 @@ add_message_files(
   SystemFaultState.msg
   DockState.msg
   GraphNavLocalization.msg
+  GraphNavGraph.msg
+  GraphNavEdge.msg
+  GraphNavEdgeId.msg
+  GraphNavWaypoint.msg
+  GraphNavAnchoring.msg
+  GraphNavAnchor.msg
+  GraphNavAnchoredWorldObject.msg
 )
 
 add_service_files(

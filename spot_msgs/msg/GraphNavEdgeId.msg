@@ -1,0 +1,2 @@
+string from_waypoint
+string to_waypoint

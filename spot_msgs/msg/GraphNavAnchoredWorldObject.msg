@@ -1,0 +1,2 @@
+string id
+geometry_msgs/Pose seed_tform_object
