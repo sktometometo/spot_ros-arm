@@ -975,8 +975,8 @@ class SpotROS:
             if world_object.name == "world_obj_dock":
                 dock_obj = DockObj()
                 dock_obj.dock_id = world_object.dock_properties.dock_id
-                frame_name_dock = world_object.dock_properties.frame_name_dock.
-                frame_vision_to_dock = world_object.transforms_snapshot.child_to_parent_edge_map[frame_name_dock]
+                frame_name_dock = world_object.dock_properties.frame_name_dock
+                frame = world_object.transforms_snapshot.child_to_parent_edge_map[frame_name_dock]
                 dock_obj.pose.header.stamp = timestamp
                 dock_obj.pose.header.frame_id = "vision"
                 dock_obj.pose.pose.position.x = frame.parent_tform_child.position.x
