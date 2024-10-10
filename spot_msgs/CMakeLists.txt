@@ -15,6 +15,8 @@ add_message_files(
   FILES
   BatteryStateArray.msg
   BehaviorFault.msg
+  DockObj.msg
+  DockObjArray.msg
   EStopStateArray.msg
   FootStateArray.msg
   LeaseArray.msg

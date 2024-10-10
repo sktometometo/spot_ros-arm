@@ -29,6 +29,8 @@ from tf2_msgs.msg import TFMessage
 from spot_msgs.msg import (
     BatteryStateArray,
     BehaviorFaultState,
+    DockObj,
+    DockObjArray,
     EStopStateArray,
     Feedback,
     FootStateArray,
@@ -963,13 +965,29 @@ class SpotROS:
         bbox_detection = BoundingBoxArray()
         bbox_detection.header.frame_id = "vision"
         bbox_detection.header.stamp = rospy.Time.now()
+        dock_obj_array = DockObjArray()
         for world_object in proto.world_objects:
             rospy.logdebug(f"world_object {world_object}")
-            if world_object.name == "world_obj_tracked_entity":
-                timestamp = rospy.Time(
-                    secs=world_object.acquisition_time.seconds,
-                    nsecs=world_object.acquisition_time.nanos,
-                )
+            timestamp = rospy.Time(
+                secs=world_object.acquisition_time.seconds,
+                nsecs=world_object.acquisition_time.nanos,
+            )
+            if world_object.name == "world_obj_dock":
+                dock_obj = DockObj()
+                dock_obj.dock_id = world_object.dock_properties.dock_id
+                frame_name_dock = world_object.dock_properties.frame_name_dock.
+                frame_vision_to_dock = world_object.transforms_snapshot.child_to_parent_edge_map[frame_name_dock]
+                dock_obj.pose.header.stamp = timestamp
+                dock_obj.pose.header.frame_id = "vision"
+                dock_obj.pose.pose.position.x = frame.parent_tform_child.position.x
+                dock_obj.pose.pose.position.y = frame.parent_tform_child.position.y
+                dock_obj.pose.pose.position.z = frame.parent_tform_child.position.z
+                dock_obj.pose.pose.orientation.w = frame.parent_tform_child.rotation.w
+                dock_obj.pose.pose.orientation.x = frame.parent_tform_child.rotation.x
+                dock_obj.pose.pose.orientation.y = frame.parent_tform_child.rotation.y
+                dock_obj.pose.pose.orientation.z = frame.parent_tform_child.rotation.z
+                dock_obj_array.docks.append(dock_obj)
+            elif world_object.name == "world_obj_tracked_entity":
                 for key in world_object.transforms_snapshot.child_to_parent_edge_map:
                     frame = world_object.transforms_snapshot.child_to_parent_edge_map[
                         key
@@ -1013,6 +1031,7 @@ class SpotROS:
                             bbox_detection.boxes.append(box)
         self.world_object_bbox_pub.publish(bbox)
         self.world_object_detection_bbox_pub.publish(bbox_detection)
+        self.world_object_dock_pub.publish(dock_obj_array)
 
     def shutdown(self):
         rospy.loginfo("Shutting down ROS driver for Spot")
@@ -1191,6 +1210,9 @@ class SpotROS:
             )
             self.world_object_detection_bbox_pub = rospy.Publisher(
                 "tracked_world_objects_detection", BoundingBoxArray, queue_size=10
+            )
+            self.world_object_dock_pub = rospy.Publisher(
+                "world_object_docks", DockObjArray, queue_size=10
             )
 
             # GraphNav "
