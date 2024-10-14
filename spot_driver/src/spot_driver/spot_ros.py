@@ -18,14 +18,11 @@ from geometry_msgs.msg import (
     Twist,
     TwistWithCovarianceStamped,
 )
-from ros_lock import ROSLock
 from jsk_recognition_msgs.msg import BoundingBox, BoundingBoxArray
 from nav_msgs.msg import Odometry
 from numpy import append
+from ros_lock import ROSLock
 from sensor_msgs.msg import CameraInfo, Image, JointState, PointCloud2
-from std_srvs.srv import SetBool, SetBoolResponse, Trigger, TriggerResponse
-from tf2_msgs.msg import TFMessage
-
 from spot_msgs.msg import (
     BatteryStateArray,
     BehaviorFaultState,
@@ -34,6 +31,16 @@ from spot_msgs.msg import (
     EStopStateArray,
     Feedback,
     FootStateArray,
+    GraphNavAnchor,
+    GraphNavAnchoredWorldObject,
+    GraphNavAnchoring,
+    GraphNavEdge,
+    GraphNavEdgeId,
+    GraphNavGraph,
+    GraphNavLocalization,
+    GraphNavNavigationFeedback,
+    GraphNavRoute,
+    GraphNavWaypoint,
     LeaseArray,
     LeaseResource,
     ManipulatorState,
@@ -48,16 +55,6 @@ from spot_msgs.msg import (
     TrajectoryFeedback,
     TrajectoryResult,
     WiFiState,
-    GraphNavLocalization,
-    GraphNavGraph,
-    GraphNavEdge,
-    GraphNavEdgeId,
-    GraphNavWaypoint,
-    GraphNavAnchoring,
-    GraphNavAnchor,
-    GraphNavAnchoredWorldObject,
-    GraphNavRoute,
-    GraphNavNavigationFeedback,
 )
 from spot_msgs.srv import (
     ClearBehaviorFault,
@@ -84,6 +81,8 @@ from spot_msgs.srv import (
     UploadGraph,
     UploadGraphResponse,
 )
+from std_srvs.srv import SetBool, SetBoolResponse, Trigger, TriggerResponse
+from tf2_msgs.msg import TFMessage
 
 from .ros_helpers import *
 from .spot_wrapper import SpotWrapper
@@ -104,7 +103,9 @@ class SpotROS:
         self.callbacks["gripper_image"] = self.GripperImageCB
         self.callbacks["lidar_points"] = self.LidarPointCloudCB
         self.callbacks["world_object"] = self.WorldObjectCB
-        self.callbacks["graph_nav_localization_state"] = self.GraphNavLocalizationStateCB
+        self.callbacks["graph_nav_localization_state"] = (
+            self.GraphNavLocalizationStateCB
+        )
         self.callbacks["graph_nav_graph"] = self.GraphNavGraphCB
 
         self.roslock_mobility = ROSLock("mobility")
@@ -243,27 +244,45 @@ class SpotROS:
         del results
         data = self.spot_wrapper.front_images
         if data:
-            if self.frontleft_image_pub.get_num_connections() > 0 or self.frontleft_image_info_pub.get_num_connections() > 0:
+            if (
+                self.frontleft_image_pub.get_num_connections() > 0
+                or self.frontleft_image_info_pub.get_num_connections() > 0
+            ):
                 image_msg0, camera_info_msg0 = getImageMsg(data[0], self.spot_wrapper)
                 self.frontleft_image_pub.publish(image_msg0)
                 self.frontleft_image_info_pub.publish(camera_info_msg0)
-            if self.frontright_image_pub.get_num_connections() > 0 or self.frontright_image_info_pub.get_num_connections() > 0:
+            if (
+                self.frontright_image_pub.get_num_connections() > 0
+                or self.frontright_image_info_pub.get_num_connections() > 0
+            ):
                 image_msg1, camera_info_msg1 = getImageMsg(data[1], self.spot_wrapper)
                 self.frontright_image_pub.publish(image_msg1)
                 self.frontright_image_info_pub.publish(camera_info_msg1)
-            if self.frontleft_depth_pub.get_num_connections() > 0 or self.frontleft_depth_info_pub.get_num_connections() > 0:
+            if (
+                self.frontleft_depth_pub.get_num_connections() > 0
+                or self.frontleft_depth_info_pub.get_num_connections() > 0
+            ):
                 image_msg2, camera_info_msg2 = getImageMsg(data[2], self.spot_wrapper)
                 self.frontleft_depth_pub.publish(image_msg2)
                 self.frontleft_depth_info_pub.publish(camera_info_msg2)
-            if self.frontright_depth_pub.get_num_connections() > 0 or self.frontright_depth_info_pub.get_num_connections() > 0:
+            if (
+                self.frontright_depth_pub.get_num_connections() > 0
+                or self.frontright_depth_info_pub.get_num_connections() > 0
+            ):
                 image_msg3, camera_info_msg3 = getImageMsg(data[3], self.spot_wrapper)
                 self.frontright_depth_pub.publish(image_msg3)
                 self.frontright_depth_info_pub.publish(camera_info_msg3)
-            if self.frontleft_depth_registered_pub.get_num_connections() > 0 or self.frontleft_depth_registered_info_pub.get_num_connections() > 0:
+            if (
+                self.frontleft_depth_registered_pub.get_num_connections() > 0
+                or self.frontleft_depth_registered_info_pub.get_num_connections() > 0
+            ):
                 image_msg4, camera_info_msg4 = getImageMsg(data[4], self.spot_wrapper)
                 self.frontleft_depth_registered_pub.publish(image_msg4)
                 self.frontleft_depth_registered_info_pub.publish(camera_info_msg4)
-            if self.frontright_depth_registered_pub.get_num_connections() > 0 or self.frontright_depth_registered_info_pub.get_num_connections() > 0:
+            if (
+                self.frontright_depth_registered_pub.get_num_connections() > 0
+                or self.frontright_depth_registered_info_pub.get_num_connections() > 0
+            ):
                 image_msg5, camera_info_msg5 = getImageMsg(data[5], self.spot_wrapper)
                 self.frontright_depth_registered_pub.publish(image_msg5)
                 self.frontright_depth_registered_info_pub.publish(camera_info_msg5)
@@ -284,27 +303,45 @@ class SpotROS:
         del results
         data = self.spot_wrapper.side_images
         if data:
-            if self.left_image_pub.get_num_connections() > 0 or self.left_image_info_pub.get_num_connections() > 0:
+            if (
+                self.left_image_pub.get_num_connections() > 0
+                or self.left_image_info_pub.get_num_connections() > 0
+            ):
                 image_msg0, camera_info_msg0 = getImageMsg(data[0], self.spot_wrapper)
                 self.left_image_pub.publish(image_msg0)
                 self.left_image_info_pub.publish(camera_info_msg0)
-            if self.right_image_pub.get_num_connections() > 0 or self.right_image_info_pub.get_num_connections() > 0:
+            if (
+                self.right_image_pub.get_num_connections() > 0
+                or self.right_image_info_pub.get_num_connections() > 0
+            ):
                 image_msg1, camera_info_msg1 = getImageMsg(data[1], self.spot_wrapper)
                 self.right_image_pub.publish(image_msg1)
                 self.right_image_info_pub.publish(camera_info_msg1)
-            if self.left_depth_pub.get_num_connections() > 0 or self.left_depth_info_pub.get_num_connections() > 0:
+            if (
+                self.left_depth_pub.get_num_connections() > 0
+                or self.left_depth_info_pub.get_num_connections() > 0
+            ):
                 image_msg2, camera_info_msg2 = getImageMsg(data[2], self.spot_wrapper)
                 self.left_depth_pub.publish(image_msg2)
                 self.left_depth_info_pub.publish(camera_info_msg2)
-            if self.right_depth_pub.get_num_connections() > 0 or self.right_depth_info_pub.get_num_connections() > 0:
+            if (
+                self.right_depth_pub.get_num_connections() > 0
+                or self.right_depth_info_pub.get_num_connections() > 0
+            ):
                 image_msg3, camera_info_msg3 = getImageMsg(data[3], self.spot_wrapper)
                 self.right_depth_pub.publish(image_msg3)
                 self.right_depth_info_pub.publish(camera_info_msg3)
-            if self.left_depth_registered_pub.get_num_connections() > 0 or self.left_depth_registered_info_pub.get_num_connections() > 0:
+            if (
+                self.left_depth_registered_pub.get_num_connections() > 0
+                or self.left_depth_registered_info_pub.get_num_connections() > 0
+            ):
                 image_msg4, camera_info_msg4 = getImageMsg(data[4], self.spot_wrapper)
                 self.left_depth_registered_pub.publish(image_msg4)
                 self.left_depth_registered_info_pub.publish(camera_info_msg4)
-            if self.right_depth_registered_pub.get_num_connections() > 0 or self.right_depth_registered_info_pub.get_num_connections() > 0:
+            if (
+                self.right_depth_registered_pub.get_num_connections() > 0
+                or self.right_depth_registered_info_pub.get_num_connections() > 0
+            ):
                 image_msg5, camera_info_msg5 = getImageMsg(data[5], self.spot_wrapper)
                 self.right_depth_registered_pub.publish(image_msg5)
                 self.right_depth_registered_info_pub.publish(camera_info_msg5)
@@ -325,15 +362,24 @@ class SpotROS:
         del results
         data = self.spot_wrapper.rear_images
         if data:
-            if self.back_image_pub.get_num_connections() > 0 or self.back_image_info_pub.get_num_connections() > 0:
+            if (
+                self.back_image_pub.get_num_connections() > 0
+                or self.back_image_info_pub.get_num_connections() > 0
+            ):
                 image_msg0, camera_info_msg0 = getImageMsg(data[0], self.spot_wrapper)
                 self.back_image_pub.publish(image_msg0)
                 self.back_image_info_pub.publish(camera_info_msg0)
-            if self.back_depth_pub.get_num_connections() > 0 or self.back_depth_info_pub.get_num_connections() > 0:
+            if (
+                self.back_depth_pub.get_num_connections() > 0
+                or self.back_depth_info_pub.get_num_connections() > 0
+            ):
                 mage_msg1, camera_info_msg1 = getImageMsg(data[1], self.spot_wrapper)
                 self.back_depth_pub.publish(mage_msg1)
                 self.back_depth_info_pub.publish(camera_info_msg1)
-            if self.back_depth_registered_pub.get_num_connections() > 0 or self.back_depth_registered_info_pub.get_num_connections() > 0:
+            if (
+                self.back_depth_registered_pub.get_num_connections() > 0
+                or self.back_depth_registered_info_pub.get_num_connections() > 0
+            ):
                 mage_msg2, camera_info_msg2 = getImageMsg(data[2], self.spot_wrapper)
                 self.back_depth_registered_pub.publish(mage_msg2)
                 self.back_depth_registered_info_pub.publish(camera_info_msg2)
@@ -356,9 +402,16 @@ class SpotROS:
                 "We have an arm but no gripper image data received... if this happens at the start it's OK, otherwise it's a problem",
             )
         if data:
-            for t_data, t_image_pub, t_info_pub in zip(data, self.gripper_image_pubs, self.gripper_camera_info_pubs):
-                if t_image_pub.get_num_connections() > 0 or t_info_pub.get_num_connections() > 0:
-                    image_msg0, camera_info_msg0 = getImageMsg(t_data, self.spot_wrapper)
+            for t_data, t_image_pub, t_info_pub in zip(
+                data, self.gripper_image_pubs, self.gripper_camera_info_pubs
+            ):
+                if (
+                    t_image_pub.get_num_connections() > 0
+                    or t_info_pub.get_num_connections() > 0
+                ):
+                    image_msg0, camera_info_msg0 = getImageMsg(
+                        t_data, self.spot_wrapper
+                    )
                     t_image_pub.publish(image_msg0)
                     t_info_pub.publish(camera_info_msg0)
                 self.populate_camera_static_transforms(t_data)
@@ -389,24 +442,52 @@ class SpotROS:
         proto = self.spot_wrapper.graph_nav_localization
         msg = GraphNavLocalization()
         msg.header.stamp = rospy.Time(
-                proto.localization.timestamp.seconds,
-                proto.localization.timestamp.nanos,
-                )
+            proto.localization.timestamp.seconds,
+            proto.localization.timestamp.nanos,
+        )
         msg.waypoint_id = proto.localization.waypoint_id
-        msg.body_pose_in_waypoint.position.x = proto.localization.waypoint_tform_body.position.x
-        msg.body_pose_in_waypoint.position.y = proto.localization.waypoint_tform_body.position.y
-        msg.body_pose_in_waypoint.position.z = proto.localization.waypoint_tform_body.position.z
-        msg.body_pose_in_waypoint.orientation.x = proto.localization.waypoint_tform_body.rotation.x
-        msg.body_pose_in_waypoint.orientation.y = proto.localization.waypoint_tform_body.rotation.y
-        msg.body_pose_in_waypoint.orientation.z = proto.localization.waypoint_tform_body.rotation.z
-        msg.body_pose_in_waypoint.orientation.w = proto.localization.waypoint_tform_body.rotation.w
-        msg.body_pose_in_reference_frame.position.x = proto.localization.seed_tform_body.position.x
-        msg.body_pose_in_reference_frame.position.y = proto.localization.seed_tform_body.position.y
-        msg.body_pose_in_reference_frame.position.z = proto.localization.seed_tform_body.position.z
-        msg.body_pose_in_reference_frame.orientation.x = proto.localization.seed_tform_body.rotation.x
-        msg.body_pose_in_reference_frame.orientation.y = proto.localization.seed_tform_body.rotation.y
-        msg.body_pose_in_reference_frame.orientation.z = proto.localization.seed_tform_body.rotation.z
-        msg.body_pose_in_reference_frame.orientation.w = proto.localization.seed_tform_body.rotation.w
+        msg.body_pose_in_waypoint.position.x = (
+            proto.localization.waypoint_tform_body.position.x
+        )
+        msg.body_pose_in_waypoint.position.y = (
+            proto.localization.waypoint_tform_body.position.y
+        )
+        msg.body_pose_in_waypoint.position.z = (
+            proto.localization.waypoint_tform_body.position.z
+        )
+        msg.body_pose_in_waypoint.orientation.x = (
+            proto.localization.waypoint_tform_body.rotation.x
+        )
+        msg.body_pose_in_waypoint.orientation.y = (
+            proto.localization.waypoint_tform_body.rotation.y
+        )
+        msg.body_pose_in_waypoint.orientation.z = (
+            proto.localization.waypoint_tform_body.rotation.z
+        )
+        msg.body_pose_in_waypoint.orientation.w = (
+            proto.localization.waypoint_tform_body.rotation.w
+        )
+        msg.body_pose_in_reference_frame.position.x = (
+            proto.localization.seed_tform_body.position.x
+        )
+        msg.body_pose_in_reference_frame.position.y = (
+            proto.localization.seed_tform_body.position.y
+        )
+        msg.body_pose_in_reference_frame.position.z = (
+            proto.localization.seed_tform_body.position.z
+        )
+        msg.body_pose_in_reference_frame.orientation.x = (
+            proto.localization.seed_tform_body.rotation.x
+        )
+        msg.body_pose_in_reference_frame.orientation.y = (
+            proto.localization.seed_tform_body.rotation.y
+        )
+        msg.body_pose_in_reference_frame.orientation.z = (
+            proto.localization.seed_tform_body.rotation.z
+        )
+        msg.body_pose_in_reference_frame.orientation.w = (
+            proto.localization.seed_tform_body.rotation.w
+        )
         self.graph_nav_localization_state_pub.publish(msg)
 
     def GraphNavGraphCB(self, results):
@@ -430,9 +511,9 @@ class SpotROS:
         for edge in proto.edges:
             msg = GraphNavEdge()
             msg.id = GraphNavEdgeId(
-                    from_waypoint=edge.id.from_waypoint,
-                    to_waypoint=edge.id.to_waypoint,
-                    )
+                from_waypoint=edge.id.from_waypoint,
+                to_waypoint=edge.id.to_waypoint,
+            )
             msg.snapshot_id = edge.snapshot_id
             msg.from_tform_to.position.x = edge.from_tform_to.position.x
             msg.from_tform_to.position.y = edge.from_tform_to.position.y
@@ -449,22 +530,44 @@ class SpotROS:
             msg.seed_tform_waypoint.position.x = anchor.seed_tform_waypoint.position.x
             msg.seed_tform_waypoint.position.y = anchor.seed_tform_waypoint.position.y
             msg.seed_tform_waypoint.position.z = anchor.seed_tform_waypoint.position.z
-            msg.seed_tform_waypoint.orientation.x = anchor.seed_tform_waypoint.rotation.x
-            msg.seed_tform_waypoint.orientation.y = anchor.seed_tform_waypoint.rotation.y
-            msg.seed_tform_waypoint.orientation.z = anchor.seed_tform_waypoint.rotation.z
-            msg.seed_tform_waypoint.orientation.w = anchor.seed_tform_waypoint.rotation.w
+            msg.seed_tform_waypoint.orientation.x = (
+                anchor.seed_tform_waypoint.rotation.x
+            )
+            msg.seed_tform_waypoint.orientation.y = (
+                anchor.seed_tform_waypoint.rotation.y
+            )
+            msg.seed_tform_waypoint.orientation.z = (
+                anchor.seed_tform_waypoint.rotation.z
+            )
+            msg.seed_tform_waypoint.orientation.w = (
+                anchor.seed_tform_waypoint.rotation.w
+            )
             msg_graph.anchoring.anchors.append(msg)
         # anchoring.objects
         for anchored_world_object in proto.anchoring.objects:
             msg = GraphNavAnchoredWorldObject()
             msg.id = anchored_world_object.id
-            msg.seed_tform_object.position.x = anchored_world_object.seed_tform_object.position.x
-            msg.seed_tform_object.position.y = anchored_world_object.seed_tform_object.position.y
-            msg.seed_tform_object.position.z = anchored_world_object.seed_tform_object.position.z
-            msg.seed_tform_object.orientation.x = anchored_world_object.seed_tform_object.rotation.x
-            msg.seed_tform_object.orientation.y = anchored_world_object.seed_tform_object.rotation.y
-            msg.seed_tform_object.orientation.z = anchored_world_object.seed_tform_object.rotation.z
-            msg.seed_tform_object.orientation.w = anchored_world_object.seed_tform_object.rotation.w
+            msg.seed_tform_object.position.x = (
+                anchored_world_object.seed_tform_object.position.x
+            )
+            msg.seed_tform_object.position.y = (
+                anchored_world_object.seed_tform_object.position.y
+            )
+            msg.seed_tform_object.position.z = (
+                anchored_world_object.seed_tform_object.position.z
+            )
+            msg.seed_tform_object.orientation.x = (
+                anchored_world_object.seed_tform_object.rotation.x
+            )
+            msg.seed_tform_object.orientation.y = (
+                anchored_world_object.seed_tform_object.rotation.y
+            )
+            msg.seed_tform_object.orientation.z = (
+                anchored_world_object.seed_tform_object.rotation.z
+            )
+            msg.seed_tform_object.orientation.w = (
+                anchored_world_object.seed_tform_object.rotation.w
+            )
             msg_graph.anchoring.objects.append(msg)
         self.graph_nav_graph_pub.publish(msg_graph)
 
@@ -609,6 +712,16 @@ class SpotROS:
             return SetLocomotionResponse(True, "Success")
         except Exception as e:
             return SetLocomotionResponse(False, "Error:{}".format(e))
+
+    def handle_allow_degraded_perception(self, req):
+        """ROS service handler to set allow_degraded_locomotion"""
+        try:
+            mobility_params = self.spot_wrapper.get_mobility_params()
+            mobility_params.allow_degraded_perception = req.data
+            self.spot_wrapper.set_mobility_params(mobility_params)
+            return SetBoolResponse(True, "Success")
+        except Exception as e:
+            return SetBoolResponse(False, "Error:{}".format(e))
 
     def handle_max_vel(self, req):
         """
@@ -780,13 +893,24 @@ class SpotROS:
         """Thread function to send navigate_to feedback"""
         rate = rospy.Rate(10)
         while not rospy.is_shutdown() and self.run_navigate_to:
-            localization_state = self.spot_wrapper._graph_nav_client.get_localization_state()
-            navigate_feedback_response = self.spot_wrapper._graph_nav_client.navigation_feedback()
+            localization_state = (
+                self.spot_wrapper._graph_nav_client.get_localization_state()
+            )
+            navigate_feedback_response = (
+                self.spot_wrapper._graph_nav_client.navigation_feedback()
+            )
             feedback = NavigateToFeedback()
             msg = GraphNavRoute(
-                    waypoint_id=[wi for wi in navigate_feedback_response.remaining_route.waypoint_id],
-                    edge_id=[GraphNavEdgeId(from_waypoint=ei.from_waypoint, to_waypoint=ei.to_waypoint) for ei in navigate_feedback_response.remaining_route.edge_id],
+                waypoint_id=[
+                    wi for wi in navigate_feedback_response.remaining_route.waypoint_id
+                ],
+                edge_id=[
+                    GraphNavEdgeId(
+                        from_waypoint=ei.from_waypoint, to_waypoint=ei.to_waypoint
                     )
+                    for ei in navigate_feedback_response.remaining_route.edge_id
+                ],
+            )
             feedback.remaining_route = msg
             msg.waypoint_id = []
             if localization_state.localization.waypoint_id:
@@ -976,7 +1100,9 @@ class SpotROS:
                 dock_obj = DockObj()
                 dock_obj.dock_id = world_object.dock_properties.dock_id
                 frame_name_dock = world_object.dock_properties.frame_name_dock
-                frame = world_object.transforms_snapshot.child_to_parent_edge_map[frame_name_dock]
+                frame = world_object.transforms_snapshot.child_to_parent_edge_map[
+                    frame_name_dock
+                ]
                 dock_obj.pose.header.stamp = timestamp
                 dock_obj.pose.header.frame_id = "vision"
                 dock_obj.pose.pose.position.x = frame.parent_tform_child.position.x
@@ -1002,7 +1128,9 @@ class SpotROS:
                             )  # Round hashed value to the range of uint32
                             box.pose.position.x = frame.parent_tform_child.position.x
                             box.pose.position.y = frame.parent_tform_child.position.y
-                            box.pose.position.z = frame.parent_tform_child.position.z - 0.8
+                            box.pose.position.z = (
+                                frame.parent_tform_child.position.z - 0.8
+                            )
                             box.pose.orientation.w = frame.parent_tform_child.rotation.w
                             box.pose.orientation.x = frame.parent_tform_child.rotation.x
                             box.pose.orientation.y = frame.parent_tform_child.rotation.y
@@ -1020,7 +1148,9 @@ class SpotROS:
                             )  # Round hashed value to the range of uint32
                             box.pose.position.x = frame.parent_tform_child.position.x
                             box.pose.position.y = frame.parent_tform_child.position.y
-                            box.pose.position.z = frame.parent_tform_child.position.z - 0.8
+                            box.pose.position.z = (
+                                frame.parent_tform_child.position.z - 0.8
+                            )
                             box.pose.orientation.w = frame.parent_tform_child.rotation.w
                             box.pose.orientation.x = frame.parent_tform_child.rotation.x
                             box.pose.orientation.y = frame.parent_tform_child.rotation.y
@@ -1142,18 +1272,38 @@ class SpotROS:
             )
 
             # Depth Registered #
-            self.back_depth_registered_pub = rospy.Publisher('depth_registered/back/image', Image, queue_size=10)
-            self.frontleft_depth_registered_pub = rospy.Publisher('depth_registered/frontleft/image', Image, queue_size=10)
-            self.frontright_depth_registered_pub = rospy.Publisher('depth_registered/frontright/image', Image, queue_size=10)
-            self.left_depth_registered_pub = rospy.Publisher('depth_registered/left/image', Image, queue_size=10)
-            self.right_depth_registered_pub = rospy.Publisher('depth_registered/right/image', Image, queue_size=10)
+            self.back_depth_registered_pub = rospy.Publisher(
+                "depth_registered/back/image", Image, queue_size=10
+            )
+            self.frontleft_depth_registered_pub = rospy.Publisher(
+                "depth_registered/frontleft/image", Image, queue_size=10
+            )
+            self.frontright_depth_registered_pub = rospy.Publisher(
+                "depth_registered/frontright/image", Image, queue_size=10
+            )
+            self.left_depth_registered_pub = rospy.Publisher(
+                "depth_registered/left/image", Image, queue_size=10
+            )
+            self.right_depth_registered_pub = rospy.Publisher(
+                "depth_registered/right/image", Image, queue_size=10
+            )
 
             # Image Camera Info #
-            self.back_image_info_pub = rospy.Publisher('camera/back/camera_info', CameraInfo, queue_size=10)
-            self.frontleft_image_info_pub = rospy.Publisher('camera/frontleft/camera_info', CameraInfo, queue_size=10)
-            self.frontright_image_info_pub = rospy.Publisher('camera/frontright/camera_info', CameraInfo, queue_size=10)
-            self.left_image_info_pub = rospy.Publisher('camera/left/camera_info', CameraInfo, queue_size=10)
-            self.right_image_info_pub = rospy.Publisher('camera/right/camera_info', CameraInfo, queue_size=10)
+            self.back_image_info_pub = rospy.Publisher(
+                "camera/back/camera_info", CameraInfo, queue_size=10
+            )
+            self.frontleft_image_info_pub = rospy.Publisher(
+                "camera/frontleft/camera_info", CameraInfo, queue_size=10
+            )
+            self.frontright_image_info_pub = rospy.Publisher(
+                "camera/frontright/camera_info", CameraInfo, queue_size=10
+            )
+            self.left_image_info_pub = rospy.Publisher(
+                "camera/left/camera_info", CameraInfo, queue_size=10
+            )
+            self.right_image_info_pub = rospy.Publisher(
+                "camera/right/camera_info", CameraInfo, queue_size=10
+            )
 
             # Depth Camera Info #
             self.back_depth_info_pub = rospy.Publisher(
@@ -1173,11 +1323,21 @@ class SpotROS:
             )
 
             # Depth Camera Info #
-            self.back_depth_registered_info_pub = rospy.Publisher('depth_registered/back/camera_info', CameraInfo, queue_size=10)
-            self.frontleft_depth_registered_info_pub = rospy.Publisher('depth_registered/frontleft/camera_info', CameraInfo, queue_size=10)
-            self.frontright_depth_registered_info_pub = rospy.Publisher('depth_registered/frontright/camera_info', CameraInfo, queue_size=10)
-            self.left_depth_registered_info_pub = rospy.Publisher('depth_registered/left/camera_info', CameraInfo, queue_size=10)
-            self.right_depth_registered_info_pub = rospy.Publisher('depth_registered/right/camera_info', CameraInfo, queue_size=10)
+            self.back_depth_registered_info_pub = rospy.Publisher(
+                "depth_registered/back/camera_info", CameraInfo, queue_size=10
+            )
+            self.frontleft_depth_registered_info_pub = rospy.Publisher(
+                "depth_registered/frontleft/camera_info", CameraInfo, queue_size=10
+            )
+            self.frontright_depth_registered_info_pub = rospy.Publisher(
+                "depth_registered/frontright/camera_info", CameraInfo, queue_size=10
+            )
+            self.left_depth_registered_info_pub = rospy.Publisher(
+                "depth_registered/left/camera_info", CameraInfo, queue_size=10
+            )
+            self.right_depth_registered_info_pub = rospy.Publisher(
+                "depth_registered/right/camera_info", CameraInfo, queue_size=10
+            )
 
             self.gripper_image_pubs = []
             self.gripper_camera_info_pubs = []
@@ -1218,10 +1378,10 @@ class SpotROS:
             # GraphNav "
             self.graph_nav_localization_state_pub = rospy.Publisher(
                 "graph_nav_localization_state", GraphNavLocalization, queue_size=10
-                )
+            )
             self.graph_nav_graph_pub = rospy.Publisher(
                 "graph_nav_graph", GraphNavGraph, queue_size=10
-                )
+            )
 
             # Status Publishers #
             self.joint_state_pub = rospy.Publisher(
@@ -1286,6 +1446,11 @@ class SpotROS:
             rospy.Service("spot_pose", SpotPose, self.handle_spot_pose)
             rospy.Service("stair_mode", SetBool, self.handle_stair_mode)
             rospy.Service("locomotion_mode", SetLocomotion, self.handle_locomotion_mode)
+            rospy.Service(
+                "allow_degraded_perception",
+                SetBool,
+                self.handle_allow_degraded_perception,
+            )
             rospy.Service("max_velocity", SetVelocity, self.handle_max_vel)
             rospy.Service(
                 "clear_behavior_fault",
